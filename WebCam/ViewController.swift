@@ -10,7 +10,7 @@ import UIKit
 
 class ViewController: UIViewController {
 
-    let webCam = WebCamViewController()
+    let webCam = WebCamViewController(addGestures: true)
     
     override func viewDidLoad() {
         super.viewDidLoad()

@@ -21,6 +21,15 @@ class WebCamViewController: UIViewController {
     
     // MARK: - Initializers
     
+    init(addGestures: Bool) {
+        
+        super.init(nibName: nil, bundle: nil)
+        
+        if addGestures {
+            addGesturesToWebCam()
+        }
+    }
+    
     override func viewDidLoad() {
         
         super.viewDidLoad()
@@ -30,6 +39,10 @@ class WebCamViewController: UIViewController {
     
     override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
         return UIInterfaceOrientationMask.Landscape
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     // MARK: - Public Methods
@@ -101,6 +114,26 @@ class WebCamViewController: UIViewController {
         self.view.transform = CGAffineTransformScale(self.view.transform, sender.scale, sender.scale)
     }
     
+    // MARK: - WebCam Gestures
+    
+    func addGesturesToWebCam() {
+        
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(self.doubleTapReceived(_:)))
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(self.moveWebCam(_:)))
+        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(self.resizeWebCam(_:)))
+        let rotation = UIRotationGestureRecognizer(target: self, action: #selector(self.rotateWebCam(_:)))
+        
+        doubleTap.numberOfTapsRequired = 2
+        self.view.addGestureRecognizer(doubleTap)
+        
+        pan.minimumNumberOfTouches = 1
+        pan.maximumNumberOfTouches = 2
+        
+        self.view.addGestureRecognizer(pan)
+        self.view.addGestureRecognizer(pinch)
+        self.view.addGestureRecognizer(rotation)
+    }
+
     // MARK: - Private Methods
     
     private func beginSession() {
@@ -149,39 +182,5 @@ class WebCamViewController: UIViewController {
         self.view.frame = rect
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.setCamOrientation), name: UIDeviceOrientationDidChangeNotification, object: nil)
-        
-        addGesturesToWebCam()
-    }
-    
-    // MARK: - WebCam Gestures
-    
-    private func addGesturesToWebCam() {
-        
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(self.doubleTapReceived(_:)))
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(self.moveWebCam(_:)))
-        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(self.resizeWebCam(_:)))
-        let rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(self.rotateWebCam(_:)))
-        
-        doubleTap.numberOfTapsRequired = 2
-        self.view.addGestureRecognizer(doubleTap)
-        
-        panGesture.minimumNumberOfTouches = 1
-        panGesture.maximumNumberOfTouches = 2
-        
-        panGesture.delaysTouchesBegan = false
-        pinchGesture.delaysTouchesBegan = false
-        rotationGesture.delaysTouchesBegan = false
-        
-        panGesture.delaysTouchesEnded = true
-        pinchGesture.delaysTouchesEnded = true
-        rotationGesture.delaysTouchesEnded = true
-        
-        panGesture.cancelsTouchesInView = true
-        pinchGesture.cancelsTouchesInView = true
-        rotationGesture.cancelsTouchesInView = true
-        
-        self.view.addGestureRecognizer(panGesture)
-        self.view.addGestureRecognizer(pinchGesture)
-        self.view.addGestureRecognizer(rotationGesture)
     }
 }
