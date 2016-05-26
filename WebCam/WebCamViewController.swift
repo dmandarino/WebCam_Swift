@@ -2,25 +2,24 @@
 //  CamViewController.swift
 //  WebCamApp
 //
-//  Created by Douglas Mandarino on 4/4/16.
+//  Created by Douglas Mandarino on 5/26/16.
 //  Copyright © 2016 Douglas. All rights reserved.
 //
 
 import UIKit
 import AVFoundation
 
-class WebCamViewController: UIViewController
-{
+class WebCamViewController: UIViewController {
     
-// MARK: - Public & ReadOnly Properties
+    // MARK: - Properties
     
     private var _captureSession: AVCaptureSession!
     private var _previewLayer: AVCaptureVideoPreviewLayer!
     private var _captureDevice: AVCaptureDevice!
     
     private var _isFront = false
-
-// MARK: - Initializers
+    
+    // MARK: - Initializers
     
     override func viewDidLoad() {
         
@@ -33,7 +32,7 @@ class WebCamViewController: UIViewController
         return UIInterfaceOrientationMask.Landscape
     }
     
-// MARK: - Public Methods
+    // MARK: - Public Methods
     
     func startCam() {
         
@@ -59,7 +58,7 @@ class WebCamViewController: UIViewController
     }
     
     func doubleTapReceived(sender: UITapGestureRecognizer) {
-
+        
         _captureSession = nil
         _captureDevice = nil
         _previewLayer = nil
@@ -73,16 +72,36 @@ class WebCamViewController: UIViewController
             
             case .LandscapeRight:
                 _previewLayer?.connection.videoOrientation = AVCaptureVideoOrientation.LandscapeLeft
-                break
             case .LandscapeLeft:
                 _previewLayer?.connection.videoOrientation = AVCaptureVideoOrientation.LandscapeRight
-                break
+            case .Portrait:
+                _previewLayer?.connection.videoOrientation = AVCaptureVideoOrientation.Portrait
+            case .PortraitUpsideDown:
+                _previewLayer?.connection.videoOrientation = AVCaptureVideoOrientation.PortraitUpsideDown
             default:
                 break
         }
     }
     
-// MARK: - Private Methods
+    func moveWebCam(sender: UIPanGestureRecognizer) {
+        
+        let translation = sender.translationInView(self.view)
+        
+        self.view.center = CGPointMake(self.view.center.x + translation.x, self.view.center.y + translation.y)
+        sender.setTranslation(CGPointZero, inView: self.view)
+    }
+    
+    func rotateWebCam(sender: UIRotationGestureRecognizer) {
+        
+        self.view.transform = CGAffineTransformRotate(self.view.transform, sender.rotation)
+    }
+    
+    func resizeWebCam(sender: UIPinchGestureRecognizer) {
+        
+        self.view.transform = CGAffineTransformScale(self.view.transform, sender.scale, sender.scale)
+    }
+    
+    // MARK: - Private Methods
     
     private func beginSession() {
         
@@ -120,18 +139,49 @@ class WebCamViewController: UIViewController
     }
     
     private func setConfigs() {
-    
+        
+        let x = UIScreen.mainScreen().bounds.height/4
+        let y = UIScreen.mainScreen().bounds.width/2
+        
+        let rect = CGRectMake(x, y, 300.0, 169.0)
+        
         self.view.backgroundColor = UIColor.blackColor()
+        self.view.frame = rect
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.setCamOrientation), name: UIDeviceOrientationDidChangeNotification, object: nil)
         
-        setTapGesture()
+        addGesturesToWebCam()
     }
     
-    private func setTapGesture() {
+    // MARK: - WebCam Gestures
+    
+    private func addGesturesToWebCam() {
         
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(self.doubleTapReceived(_:)))
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(self.moveWebCam(_:)))
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(self.resizeWebCam(_:)))
+        let rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(self.rotateWebCam(_:)))
+        
         doubleTap.numberOfTapsRequired = 2
         self.view.addGestureRecognizer(doubleTap)
+        
+        panGesture.minimumNumberOfTouches = 1
+        panGesture.maximumNumberOfTouches = 2
+        
+        panGesture.delaysTouchesBegan = false
+        pinchGesture.delaysTouchesBegan = false
+        rotationGesture.delaysTouchesBegan = false
+        
+        panGesture.delaysTouchesEnded = true
+        pinchGesture.delaysTouchesEnded = true
+        rotationGesture.delaysTouchesEnded = true
+        
+        panGesture.cancelsTouchesInView = true
+        pinchGesture.cancelsTouchesInView = true
+        rotationGesture.cancelsTouchesInView = true
+        
+        self.view.addGestureRecognizer(panGesture)
+        self.view.addGestureRecognizer(pinchGesture)
+        self.view.addGestureRecognizer(rotationGesture)
     }
 }

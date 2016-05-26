@@ -10,11 +10,12 @@ import UIKit
 
 class ViewController: UIViewController {
 
+    let webCam = WebCamViewController()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let webCam = WebCamViewController()
         webCam.startCam()
         self.view.addSubview(webCam.view)
     }
