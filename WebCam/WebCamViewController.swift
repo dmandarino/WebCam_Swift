@@ -76,6 +76,7 @@ class WebCamViewController: UIViewController {
         _captureDevice = nil
         _previewLayer = nil
         
+        _isFront = !_isFront
         startCam()
     }
     
@@ -98,7 +99,7 @@ class WebCamViewController: UIViewController {
     
     func moveWebCam(sender: UIPanGestureRecognizer) {
         
-        let translation = sender.translationInView(self.view)
+        let translation = sender.translationInView(self.view?.superview)
         
         self.view.center = CGPointMake(self.view.center.x + translation.x, self.view.center.y + translation.y)
         sender.setTranslation(CGPointZero, inView: self.view)
@@ -107,33 +108,15 @@ class WebCamViewController: UIViewController {
     func rotateWebCam(sender: UIRotationGestureRecognizer) {
         
         self.view.transform = CGAffineTransformRotate(self.view.transform, sender.rotation)
+        sender.rotation = 0.0
     }
     
     func resizeWebCam(sender: UIPinchGestureRecognizer) {
         
         self.view.transform = CGAffineTransformScale(self.view.transform, sender.scale, sender.scale)
+        sender.scale = 1
     }
     
-    // MARK: - WebCam Gestures
-    
-    func addGesturesToWebCam() {
-        
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(self.doubleTapReceived(_:)))
-        let pan = UIPanGestureRecognizer(target: self, action: #selector(self.moveWebCam(_:)))
-        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(self.resizeWebCam(_:)))
-        let rotation = UIRotationGestureRecognizer(target: self, action: #selector(self.rotateWebCam(_:)))
-        
-        doubleTap.numberOfTapsRequired = 2
-        self.view.addGestureRecognizer(doubleTap)
-        
-        pan.minimumNumberOfTouches = 1
-        pan.maximumNumberOfTouches = 2
-        
-        self.view.addGestureRecognizer(pan)
-        self.view.addGestureRecognizer(pinch)
-        self.view.addGestureRecognizer(rotation)
-    }
-
     // MARK: - Private Methods
     
     private func beginSession() {
@@ -161,26 +144,58 @@ class WebCamViewController: UIViewController {
         
         if _isFront {
             
-            _isFront = false
             return AVCaptureDevicePosition.Back
         }
         else {
             
-            _isFront = true
             return AVCaptureDevicePosition.Front
         }
     }
     
     private func setConfigs() {
         
+        //Set WebCamBounds
         let x = UIScreen.mainScreen().bounds.height/4
         let y = UIScreen.mainScreen().bounds.width/2
         
+        //Make it 16:9 aspect ratio
         let rect = CGRectMake(x, y, 300.0, 169.0)
         
         self.view.backgroundColor = UIColor.blackColor()
         self.view.frame = rect
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.setCamOrientation), name: UIDeviceOrientationDidChangeNotification, object: nil)
+    }
+    
+    // MARK: - WebCam Gestures
+    
+    private func addGesturesToWebCam() {
+        
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(self.doubleTapReceived(_:)))
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(self.moveWebCam(_:)))
+        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(self.resizeWebCam(_:)))
+        let rotation = UIRotationGestureRecognizer(target: self, action: #selector(self.rotateWebCam(_:)))
+        
+        doubleTap.numberOfTapsRequired = 2
+        self.view.addGestureRecognizer(doubleTap)
+        
+        pan.minimumNumberOfTouches = 1
+        pan.maximumNumberOfTouches = 2
+        
+        pan.delaysTouchesBegan = false
+        pinch.delaysTouchesBegan = false
+        rotation.delaysTouchesBegan = false
+        
+        pan.delaysTouchesEnded = true
+        pinch.delaysTouchesEnded = true
+        rotation.delaysTouchesEnded = true
+        
+        pan.cancelsTouchesInView = true
+        pinch.cancelsTouchesInView = true
+        rotation.cancelsTouchesInView = true
+        
+        self.view.addGestureRecognizer(pan)
+        self.view.addGestureRecognizer(pinch)
+        self.view.addGestureRecognizer(rotation)
     }
 }
